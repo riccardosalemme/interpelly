@@ -1,0 +1,106 @@
+{% load static %}
+<!doctype html>
+<html lang="it">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Interpelly</title>
+    <link rel="icon" type="image/x-icon" href="{% static 'interpelli/favicon.ico' %}">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/purecss@3.0.0/build/pure-min.css">
+    <style>
+        body { color: #222; background: #fafafa; }
+        main { padding: 1.5rem; }
+        a { color: #175c9e; }
+        .provinces { display: flex; flex-wrap: wrap; gap: .75rem 1.5rem; margin: 1rem 0; }
+        .table-wrapper { overflow-x: auto; background: white; }
+        table { width: 100%; }
+        th, td { vertical-align: top; }
+        .title { min-width: 18rem; }
+        .description { min-width: 22rem; white-space: pre-wrap; }
+
+        .date { white-space: nowrap; }
+        nav { display: flex; flex-wrap: wrap; align-items: center; gap: 1rem; margin-top: 1.5rem; }
+    </style>
+</head>
+<body>
+<main>
+    <h1>Interpelly</h1>
+    <p>Interpelly è un progetto open source che raccoglie gli interpelli scolastici e notifica i nuovi annunci su Telegram.
+        <b>Al momento il progetto è attivo solo per la Lombardia.</b></p>
+    <p>Gli annunci vengono raccolti dalle pagine provinciali degli interpelli sul sito del Ministero
+        dell’Istruzione e del Merito (MIM), per le province abilitate al monitoraggio.
+        Gli annunci non più visibili sul sito restano nell’archivio.
+    </p>
+
+    <p>
+        Puoi accedere al gruppo telegram con tutti gli interpelli caricati cercando @interpelly su Telegram o <a href="https://t.me/interpelly">cliccando qui</a>
+    </p>
+
+    <form method="get" class="pure-form">
+        <fieldset>
+            <legend>Filtra per provincia</legend>
+            <p>Nessuna selezione: mostra tutte le province.</p>
+            <div class="provinces">
+                {% for province in provinces %}
+                    <label class="pure-checkbox">
+                        <input type="checkbox" name="province" value="{{ province.pk }}"
+                            {% if province.pk|stringformat:"s" in selected_provinces %}checked{% endif %}>
+                        {{ province.name }}
+                    </label>
+                {% endfor %}
+            </div>
+            <button type="submit" class="pure-button pure-button-primary">Filtra</button>
+            <a href="{% url 'home' %}" class="pure-button">Azzera filtri</a>
+        </fieldset>
+    </form>
+
+    <p>{{ page.paginator.count }} interpelli · Ordinati per caricamento, dal più recente.</p>
+    <div class="table-wrapper" role="region" aria-label="Elenco interpelli" tabindex="0">
+        <table class="pure-table pure-table-bordered pure-table-striped">
+            <thead>
+                <tr>
+
+                    <th scope="col">Provincia</th>
+                    <th scope="col">Data pubblicazione</th>
+                    <th scope="col">Titolo</th>
+                    <th scope="col">Descrizione</th>
+
+                    <th scope="col">Primo caricamento</th>
+                    <th scope="col">Ultimo aggiornamento</th>
+
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in page %}
+                    <tr>
+
+                        <td>{{ item.province.name }}</td>
+                        <td class="date">{{ item.published_date|date:"d/m/Y"|default:"—" }}</td>
+                        <td class="title"><a href="{{ item.url }}" target="_blank" rel="noopener noreferrer">{{ item.title }}</a></td>
+                        <td class="description">{{ item.description|default:"—" }}</td>
+
+                        <td class="date">{{ item.created_at|date:"d/m/Y H:i:s" }}</td>
+                        <td class="date">{{ item.updated_at|date:"d/m/Y H:i:s" }}</td>
+
+                    </tr>
+                {% empty %}
+                    <tr><td colspan="6">Nessun interpello trovato.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <nav aria-label="Paginazione">
+        {% if page.has_previous %}
+            <a class="pure-button" href="{% querystring page=1 %}">Prima</a>
+            <a class="pure-button" href="{% querystring page=page.previous_page_number %}">Precedente</a>
+        {% endif %}
+        <span>Pagina {{ page.number }} di {{ page.paginator.num_pages }}</span>
+        {% if page.has_next %}
+            <a class="pure-button" href="{% querystring page=page.next_page_number %}">Successiva</a>
+            <a class="pure-button" href="{% querystring page=page.paginator.num_pages %}">Ultima</a>
+        {% endif %}
+    </nav>
+</main>
+</body>
+</html>
